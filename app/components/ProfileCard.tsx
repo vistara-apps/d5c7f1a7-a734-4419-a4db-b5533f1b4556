@@ -1,7 +1,8 @@
 'use client';
 
 import { User, MatchScore } from '@/lib/types';
-import { Avatar, MessageCircle, Star, Target } from 'lucide-react';
+import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
+import { MessageCircle, Star, Target } from 'lucide-react';
 import { truncateText } from '@/lib/utils';
 
 interface ProfileCardProps {
