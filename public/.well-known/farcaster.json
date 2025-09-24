@@ -1,0 +1,30 @@
+{
+  "accountAssociation": {
+    "header": "",
+    "payload": "",
+    "signature": ""
+  },
+  "frame": {
+    "version": "1",
+    "name": "CollabSphere",
+    "subtitle": "Built with Zara",
+    "description": "CollabSphere is a Base Mini App built with Zara.",
+    "iconUrl": "https://0co.to/images/zara-2.png",
+    "homeUrl": "https://d5c7f1a7a7344419a4dbb5533f1b4556-zdot.vercel.app",
+    "splashImageUrl": "https://d5c7f1a7a7344419a4dbb5533f1b4556-zdot.vercel.app/splash.png",
+    "splashBackgroundColor": "#000000",
+    "heroImageUrl": "https://d5c7f1a7a7344419a4dbb5533f1b4556-zdot.vercel.app/image.png",
+    "tagline": "CollabSphere",
+    "screenshotUrls": [
+      "https://d5c7f1a7a7344419a4dbb5533f1b4556-zdot.vercel.app/screenshot.png",
+      "https://d5c7f1a7a7344419a4dbb5533f1b4556-zdot.vercel.app/screenshot.png"
+    ],
+    "primaryCategory": "social",
+    "tags": [
+      "base",
+      "miniapp",
+      "onchainkit"
+    ],
+    "webhookUrl": "https://d5c7f1a7a7344419a4dbb5533f1b4556-zdot.vercel.app/api/webhook"
+  }
+}
