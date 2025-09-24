@@ -1,7 +1,8 @@
 'use client';
 
 import { CollaborationRequest, User } from '@/lib/types';
-import { Avatar, Clock, CheckCircle, X } from 'lucide-react';
+import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
+import { Clock, CheckCircle, X } from 'lucide-react';
 import { formatDate } from '@/lib/utils';
 
 interface CollaborationRequestCardProps {

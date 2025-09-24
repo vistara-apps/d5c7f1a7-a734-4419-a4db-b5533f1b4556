@@ -1,143 +1,178 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { Header } from './components/Header';
 import { ProfileCard } from './components/ProfileCard';
 import { ProjectCard } from './components/ProjectCard';
 import { CollaborationRequestCard } from './components/CollaborationRequestCard';
+import { FarcasterAuth } from './components/FarcasterAuth';
+import { WalletConnect } from './components/WalletConnect';
 import { User, Project, CollaborationRequest, MatchScore } from '@/lib/types';
-import { calculateMatchScore, generateId } from '@/lib/utils';
-import { SKILLS, VALUES, COLLABORATION_GOALS } from '@/lib/constants';
-import { Target, Users, Briefcase, TrendingUp, Search, Plus } from 'lucide-react';
-
-// Mock data for demonstration
-const mockCurrentUser: User = {
-  userId: 'current-user',
-  farcasterId: 'current-user-fid',
-  displayName: 'Alex Chen',
-  bio: 'Full-stack developer passionate about AI and decentralized systems',
-  skills: ['Frontend Development', 'Backend Development', 'AI/ML', 'Blockchain Development'],
-  values: ['Open Source', 'Innovation', 'AI Ethics', 'Decentralization'],
-  goals: ['Build an AI Art Generator', 'Launch a DeFi Protocol', 'Create Educational Content'],
-  ethAddress: '0x1234...5678',
-  avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face',
-  createdAt: new Date('2024-01-15'),
-  updatedAt: new Date('2024-01-20'),
-};
-
-const mockUsers: User[] = [
-  {
-    userId: 'user-1',
-    displayName: 'Sarah Kim',
-    bio: 'UI/UX Designer with a passion for creating beautiful, accessible interfaces',
-    skills: ['UI/UX Design', 'Frontend Development', 'Product Management'],
-    values: ['Accessibility', 'Innovation', 'Open Source'],
-    goals: ['Build an AI Art Generator', 'Create Educational Content'],
-    avatar: 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=150&h=150&fit=crop&crop=face',
-    createdAt: new Date('2024-01-10'),
-    updatedAt: new Date('2024-01-18'),
-  },
-  {
-    userId: 'user-2',
-    displayName: 'Marcus Johnson',
-    bio: 'Blockchain developer and DeFi enthusiast building the future of finance',
-    skills: ['Smart Contracts', 'Blockchain Development', 'Backend Development'],
-    values: ['Decentralization', 'Transparency', 'Innovation'],
-    goals: ['Launch a DeFi Protocol', 'Build Analytics Tools'],
-    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face',
-    createdAt: new Date('2024-01-12'),
-    updatedAt: new Date('2024-01-19'),
-  },
-  {
-    userId: 'user-3',
-    displayName: 'Emily Rodriguez',
-    bio: 'Content creator and educator focused on making tech accessible to everyone',
-    skills: ['Content Creation', 'Marketing', 'Community Management'],
-    values: ['Education', 'Accessibility', 'Social Impact'],
-    goals: ['Create Educational Content', 'Launch a Podcast'],
-    avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop&crop=face',
-    createdAt: new Date('2024-01-08'),
-    updatedAt: new Date('2024-01-17'),
-  },
-];
-
-const mockProjects: Project[] = [
-  {
-    projectId: 'project-1',
-    projectName: 'AI Art Generator Platform',
-    description: 'Building a decentralized platform for AI-generated art with fair compensation for artists',
-    goals: ['Build an AI Art Generator', 'Launch NFT Collection'],
-    milestones: [
-      { id: '1', title: 'AI Model Training', description: '', completed: true },
-      { id: '2', title: 'Frontend Development', description: '', completed: true },
-      { id: '3', title: 'Smart Contract Development', description: '', completed: false },
-      { id: '4', title: 'Beta Testing', description: '', completed: false },
-      { id: '5', title: 'Mainnet Launch', description: '', completed: false },
-    ],
-    status: 'active',
-    createdAt: new Date('2024-01-15'),
-    updatedAt: new Date('2024-01-20'),
-    creatorUserId: 'current-user',
-  },
-  {
-    projectId: 'project-2',
-    projectName: 'DeFi Yield Optimizer',
-    description: 'Automated yield farming protocol that maximizes returns across multiple DeFi platforms',
-    goals: ['Launch a DeFi Protocol', 'Build Analytics Tools'],
-    milestones: [
-      { id: '1', title: 'Protocol Design', description: '', completed: true },
-      { id: '2', title: 'Smart Contract Development', description: '', completed: false },
-      { id: '3', title: 'Security Audit', description: '', completed: false },
-      { id: '4', title: 'Testnet Launch', description: '', completed: false },
-    ],
-    status: 'active',
-    createdAt: new Date('2024-01-18'),
-    updatedAt: new Date('2024-01-21'),
-    creatorUserId: 'user-2',
-  },
-];
-
-const mockRequests: CollaborationRequest[] = [
-  {
-    id: 'req-1',
-    fromUserId: 'user-1',
-    toUserId: 'current-user',
-    projectId: 'project-1',
-    message: 'I love your AI art project! I\'d like to help with the UI/UX design and make it more accessible.',
-    status: 'pending',
-    createdAt: new Date('2024-01-21'),
-  },
-  {
-    id: 'req-2',
-    fromUserId: 'user-3',
-    toUserId: 'current-user',
-    message: 'Your educational content goals align with mine. Want to collaborate on a tech education series?',
-    status: 'pending',
-    createdAt: new Date('2024-01-20'),
-  },
-];
+import { calculateMatchScore } from '@/lib/utils';
+import { Target, Users, Briefcase, TrendingUp, Search, Plus, LogIn } from 'lucide-react';
+import { FarcasterUser } from '@/lib/farcaster';
 
 export default function HomePage() {
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [matchedUsers, setMatchedUsers] = useState<(User & { matchScore: MatchScore })[]>([]);
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [requests, setRequests] = useState<CollaborationRequest[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState<'dashboard' | 'discover' | 'projects'>('dashboard');
+  const [isLoading, setIsLoading] = useState(true);
+  const [farcasterUser, setFarcasterUser] = useState<FarcasterUser | null>(null);
+  const [walletAddress, setWalletAddress] = useState<string>('');
+  const router = useRouter();
 
   useEffect(() => {
-    // Calculate match scores for all users
-    const usersWithScores = mockUsers.map(user => ({
-      ...user,
-      matchScore: calculateMatchScore(mockCurrentUser, user),
-    })).sort((a, b) => b.matchScore.score - a.matchScore.score);
-
-    setMatchedUsers(usersWithScores);
+    checkAuthAndLoadData();
   }, []);
 
-  const handleCollaborate = (userId: string) => {
-    alert(`Collaboration request sent to user ${userId}!`);
+  const checkAuthAndLoadData = async () => {
+    try {
+      // Check if user is authenticated
+      // For now, assume user needs to authenticate
+      setIsLoading(false);
+    } catch (error) {
+      console.error('Failed to load data:', error);
+      setIsLoading(false);
+    }
   };
 
-  const handleAcceptRequest = (requestId: string) => {
-    alert(`Collaboration request ${requestId} accepted!`);
+  const loadUserData = async (userId: string) => {
+    try {
+      // Load current user data
+      const userResponse = await fetch(`/api/users/${userId}`);
+      if (userResponse.ok) {
+        const { user } = await userResponse.json();
+        setCurrentUser(user);
+      }
+
+      // Load projects
+      const projectsResponse = await fetch(`/api/projects?creatorId=${userId}`);
+      if (projectsResponse.ok) {
+        const { projects } = await projectsResponse.json();
+        setProjects(projects);
+      }
+
+      // Load collaboration requests
+      const requestsResponse = await fetch(`/api/collaborations?userId=${userId}`);
+      if (requestsResponse.ok) {
+        const { collaborations } = await requestsResponse.json();
+        // Convert collaborations to requests format (simplified)
+        const mockRequests: CollaborationRequest[] = collaborations.map((collab: any) => ({
+          id: collab.collaborationId,
+          fromUserId: collab.userId,
+          toUserId: userId,
+          projectId: collab.projectId,
+          message: `Collaboration request for project`,
+          status: 'pending',
+          createdAt: collab.joinedAt,
+        }));
+        setRequests(mockRequests);
+      }
+
+      // Load and match users
+      const usersResponse = await fetch('/api/users?q=');
+      if (usersResponse.ok) {
+        const { users } = await usersResponse.json();
+        if (currentUser) {
+          const usersWithScores = users
+            .filter((user: User) => user.userId !== currentUser.userId)
+            .map((user: User) => ({
+              ...user,
+              matchScore: calculateMatchScore(currentUser, user),
+            }))
+            .sort((a: any, b: any) => b.matchScore.score - a.matchScore.score);
+
+          setMatchedUsers(usersWithScores);
+        }
+      }
+    } catch (error) {
+      console.error('Failed to load user data:', error);
+    }
+  };
+
+  const handleFarcasterAuth = async (user: FarcasterUser, appUser?: User) => {
+    setFarcasterUser(user);
+    if (appUser) {
+      setCurrentUser(appUser);
+      await loadUserData(appUser.userId);
+    } else {
+      // Check if user exists
+      try {
+        const existingUserResponse = await fetch(`/api/users/${user.fid}`);
+        if (existingUserResponse.ok) {
+          const { user: existingUser } = await existingUserResponse.json();
+          setCurrentUser(existingUser);
+          await loadUserData(existingUser.userId);
+        } else {
+          // Redirect to onboarding
+          router.push('/onboarding');
+        }
+      } catch (error) {
+        console.error('Failed to check existing user:', error);
+        router.push('/onboarding');
+      }
+    }
+  };
+
+  const handleWalletConnect = (address: string) => {
+    setWalletAddress(address);
+    if (currentUser) {
+      // Update user with wallet address
+      fetch(`/api/users/${currentUser.userId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ethAddress: address }),
+      });
+    }
+  };
+
+  const handleWalletDisconnect = () => {
+    setWalletAddress('');
+  };
+
+  const handleCollaborate = async (userId: string) => {
+    if (!currentUser) return;
+
+    try {
+      // Create collaboration request
+      const response = await fetch('/api/collaborations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          projectId: null, // General collaboration request
+          userId,
+          role: 'Collaborator',
+        }),
+      });
+
+      if (response.ok) {
+        alert('Collaboration request sent!');
+      }
+    } catch (error) {
+      console.error('Failed to send collaboration request:', error);
+    }
+  };
+
+  const handleAcceptRequest = async (requestId: string) => {
+    try {
+      // Update collaboration request status
+      await fetch(`/api/collaborations/${requestId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'accepted' }),
+      });
+      alert('Collaboration request accepted!');
+      // Reload data
+      if (currentUser) {
+        await loadUserData(currentUser.userId);
+      }
+    } catch (error) {
+      console.error('Failed to accept request:', error);
+    }
   };
 
   const handleRejectRequest = (requestId: string) => {
@@ -154,6 +189,36 @@ export default function HomePage() {
     user.skills.some(skill => skill.toLowerCase().includes(searchQuery.toLowerCase())) ||
     user.goals.some(goal => goal.toLowerCase().includes(searchQuery.toLowerCase()))
   );
+
+  // Show auth if not authenticated
+  if (!currentUser) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-bg via-bg to-surface p-4">
+        <div className="w-full max-w-md space-y-6">
+          <div className="text-center">
+            <h1 className="text-3xl font-bold text-gradient mb-4">
+              Welcome to CollabSphere
+            </h1>
+            <p className="text-muted mb-8">
+              Connect your accounts to start collaborating
+            </p>
+          </div>
+
+          <FarcasterAuth
+            onAuthSuccess={handleFarcasterAuth}
+            onAuthError={(error) => console.error('Auth error:', error)}
+          />
+
+          {farcasterUser && (
+            <WalletConnect
+              onConnect={handleWalletConnect}
+              onDisconnect={handleWalletDisconnect}
+            />
+          )}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen">
@@ -229,22 +294,26 @@ export default function HomePage() {
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
               <div className="metric-card text-center">
                 <TrendingUp className="h-8 w-8 text-accent mx-auto mb-3" />
-                <div className="text-2xl font-bold text-fg">87%</div>
-                <div className="text-sm text-muted">Match Score</div>
+                <div className="text-2xl font-bold text-fg">
+                  {matchedUsers.length > 0 ? Math.round(matchedUsers[0]?.matchScore.score || 0) : 0}%
+                </div>
+                <div className="text-sm text-muted">Top Match Score</div>
               </div>
               <div className="metric-card text-center">
                 <Users className="h-8 w-8 text-primary mx-auto mb-3" />
-                <div className="text-2xl font-bold text-fg">24</div>
+                <div className="text-2xl font-bold text-fg">{matchedUsers.length}</div>
                 <div className="text-sm text-muted">Potential Matches</div>
               </div>
               <div className="metric-card text-center">
                 <Briefcase className="h-8 w-8 text-accent mx-auto mb-3" />
-                <div className="text-2xl font-bold text-fg">3</div>
+                <div className="text-2xl font-bold text-fg">{projects.length}</div>
                 <div className="text-sm text-muted">Active Projects</div>
               </div>
               <div className="metric-card text-center">
                 <Target className="h-8 w-8 text-primary mx-auto mb-3" />
-                <div className="text-2xl font-bold text-fg">12</div>
+                <div className="text-2xl font-bold text-fg">
+                  {matchedUsers.reduce((sum, user) => sum + user.matchScore.sharedGoals.length, 0)}
+                </div>
                 <div className="text-sm text-muted">Shared Goals</div>
               </div>
             </div>
@@ -253,20 +322,35 @@ export default function HomePage() {
             <section>
               <h2 className="text-2xl font-semibold text-fg mb-6">Collaboration Requests</h2>
               <div className="grid gap-6 md:grid-cols-2">
-                {mockRequests.map((request) => {
-                  const fromUser = mockUsers.find(u => u.userId === request.fromUserId);
-                  if (!fromUser) return null;
-                  
+                {requests.length > 0 ? requests.map((request) => {
+                  // For now, create mock user data - in real app, fetch user data
+                  const mockFromUser: User = {
+                    userId: request.fromUserId,
+                    displayName: `User ${request.fromUserId}`,
+                    bio: 'Collaborator',
+                    skills: [],
+                    values: [],
+                    goals: [],
+                    avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face',
+                    createdAt: new Date(),
+                    updatedAt: new Date(),
+                  };
+
                   return (
                     <CollaborationRequestCard
                       key={request.id}
                       request={request}
-                      fromUser={fromUser}
+                      fromUser={mockFromUser}
                       onAccept={handleAcceptRequest}
                       onReject={handleRejectRequest}
                     />
                   );
-                })}
+                }) : (
+                  <div className="text-center py-8 text-muted">
+                    <Users className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                    <p>No collaboration requests yet</p>
+                  </div>
+                )}
               </div>
             </section>
 
@@ -322,22 +406,44 @@ export default function HomePage() {
         {/* Projects Tab */}
         {activeTab === 'projects' && (
           <div className="space-y-8">
-            <div className="text-center">
-              <h2 className="text-3xl font-semibold text-fg mb-4">Active Projects</h2>
-              <p className="text-muted max-w-2xl mx-auto">
-                Explore ongoing projects and find opportunities to contribute
-              </p>
+            <div className="flex justify-between items-center">
+              <div>
+                <h2 className="text-3xl font-semibold text-fg mb-4">Your Projects</h2>
+                <p className="text-muted max-w-2xl">
+                  Manage your active projects and track collaboration progress
+                </p>
+              </div>
+              <button
+                onClick={() => router.push('/projects/create')}
+                className="btn-primary"
+              >
+                <Plus className="h-5 w-5 mr-2" />
+                New Project
+              </button>
             </div>
 
             <div className="grid gap-6 md:grid-cols-2">
-              {mockProjects.map((project) => (
+              {projects.length > 0 ? projects.map((project) => (
                 <ProjectCard
                   key={project.projectId}
                   project={project}
                   onJoin={handleJoinProject}
-                  onView={(id) => alert(`Viewing project ${id}`)}
+                  onView={(id) => router.push(`/projects/${id}`)}
                 />
-              ))}
+              )) : (
+                <div className="col-span-full text-center py-12">
+                  <Briefcase className="h-16 w-16 text-muted mx-auto mb-4 opacity-50" />
+                  <h3 className="text-xl font-semibold text-fg mb-2">No projects yet</h3>
+                  <p className="text-muted mb-6">Create your first project to start collaborating</p>
+                  <button
+                    onClick={() => router.push('/projects/create')}
+                    className="btn-primary"
+                  >
+                    <Plus className="h-5 w-5 mr-2" />
+                    Create Project
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         )}

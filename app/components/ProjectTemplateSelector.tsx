@@ -1,120 +1,84 @@
 'use client';
 
-import { useState } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
+import { Button } from './ui/button';
+import { Badge } from './ui/badge';
 import { PROJECT_TEMPLATES } from '@/lib/constants';
-import { CheckCircle, Users, Target } from 'lucide-react';
+import { FileText, Users, Target, CheckCircle } from 'lucide-react';
 
 interface ProjectTemplateSelectorProps {
   onSelect: (templateId: string) => void;
-  selectedTemplate?: string;
 }
 
-export function ProjectTemplateSelector({ onSelect, selectedTemplate }: ProjectTemplateSelectorProps) {
-  const [variant, setVariant] = useState<'preview' | 'selected'>('preview');
-
+export function ProjectTemplateSelector({ onSelect }: ProjectTemplateSelectorProps) {
   return (
-    <div className="space-y-4">
-      <h3 className="text-lg font-semibold text-fg mb-4">Choose a Project Template</h3>
-      
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {PROJECT_TEMPLATES.map((template) => {
-          const isSelected = selectedTemplate === template.id;
-          
-          return (
-            <div
-              key={template.id}
-              className={`profile-card cursor-pointer transition-all duration-200 ${
-                isSelected 
-                  ? 'border-accent/50 bg-accent/5' 
-                  : 'hover:border-accent/30'
-              }`}
-              onClick={() => onSelect(template.id)}
-            >
-              {/* Header */}
-              <div className="flex items-start justify-between mb-3">
-                <h4 className="font-medium text-fg">{template.name}</h4>
-                {isSelected && (
-                  <CheckCircle className="h-5 w-5 text-accent" />
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {PROJECT_TEMPLATES.map((template) => (
+        <Card key={template.id} className="hover:border-accent/50 transition-colors cursor-pointer group">
+          <CardHeader>
+            <div className="flex items-start justify-between">
+              <div className="flex items-center space-x-3">
+                <div className="h-10 w-10 rounded-lg bg-accent/20 flex items-center justify-center group-hover:bg-accent/30 transition-colors">
+                  <FileText className="h-5 w-5 text-accent" />
+                </div>
+                <div>
+                  <CardTitle className="text-lg">{template.name}</CardTitle>
+                  <CardDescription>{template.description}</CardDescription>
+                </div>
+              </div>
+            </div>
+          </CardHeader>
+
+          <CardContent className="space-y-4">
+            {/* Roles */}
+            <div>
+              <div className="flex items-center space-x-2 mb-2">
+                <Users className="h-4 w-4 text-muted" />
+                <span className="text-sm font-medium">Suggested Roles</span>
+              </div>
+              <div className="flex flex-wrap gap-1">
+                {template.roles.map((role, index) => (
+                  <Badge key={index} variant="outline" className="text-xs">
+                    {role}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+
+            {/* Milestones */}
+            <div>
+              <div className="flex items-center space-x-2 mb-2">
+                <Target className="h-4 w-4 text-muted" />
+                <span className="text-sm font-medium">Milestones</span>
+                <Badge variant="secondary" className="text-xs">
+                  {template.milestones.length}
+                </Badge>
+              </div>
+              <ul className="space-y-1">
+                {template.milestones.slice(0, 3).map((milestone, index) => (
+                  <li key={index} className="flex items-center space-x-2 text-sm text-muted">
+                    <CheckCircle className="h-3 w-3 text-accent" />
+                    <span className="truncate">{milestone}</span>
+                  </li>
+                ))}
+                {template.milestones.length > 3 && (
+                  <li className="text-sm text-muted">
+                    +{template.milestones.length - 3} more milestones
+                  </li>
                 )}
-              </div>
-
-              {/* Description */}
-              <p className="text-sm text-muted mb-4">{template.description}</p>
-
-              {/* Roles */}
-              <div className="mb-4">
-                <div className="flex items-center space-x-2 mb-2">
-                  <Users className="h-4 w-4 text-primary" />
-                  <span className="text-sm font-medium text-fg">Roles</span>
-                </div>
-                <div className="flex flex-wrap gap-1">
-                  {template.roles.map((role, index) => (
-                    <span key={index} className="skill-tag text-xs">
-                      {role}
-                    </span>
-                  ))}
-                </div>
-              </div>
-
-              {/* Milestones */}
-              <div>
-                <div className="flex items-center space-x-2 mb-2">
-                  <Target className="h-4 w-4 text-accent" />
-                  <span className="text-sm font-medium text-fg">Milestones</span>
-                </div>
-                <div className="space-y-1">
-                  {template.milestones.slice(0, 3).map((milestone, index) => (
-                    <div key={index} className="flex items-center space-x-2">
-                      <div className="h-1.5 w-1.5 bg-muted rounded-full" />
-                      <span className="text-xs text-muted">{milestone}</span>
-                    </div>
-                  ))}
-                  {template.milestones.length > 3 && (
-                    <div className="flex items-center space-x-2">
-                      <div className="h-1.5 w-1.5 bg-muted rounded-full" />
-                      <span className="text-xs text-muted">
-                        +{template.milestones.length - 3} more milestones
-                      </span>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Selection Indicator */}
-              {isSelected && (
-                <div className="mt-4 pt-3 border-t border-accent/20">
-                  <div className="text-center text-sm font-medium text-accent">
-                    Template Selected
-                  </div>
-                </div>
-              )}
+              </ul>
             </div>
-          );
-        })}
-      </div>
 
-      {/* Custom Template Option */}
-      <div
-        className={`profile-card cursor-pointer transition-all duration-200 border-dashed ${
-          selectedTemplate === 'custom' 
-            ? 'border-accent/50 bg-accent/5' 
-            : 'hover:border-accent/30'
-        }`}
-        onClick={() => onSelect('custom')}
-      >
-        <div className="text-center py-8">
-          <div className="flex items-center justify-center mb-3">
-            <div className="h-12 w-12 rounded-full bg-surface border-2 border-dashed border-border flex items-center justify-center">
-              <Target className="h-6 w-6 text-muted" />
-            </div>
-            {selectedTemplate === 'custom' && (
-              <CheckCircle className="h-5 w-5 text-accent ml-2" />
-            )}
-          </div>
-          <h4 className="font-medium text-fg mb-2">Start from Scratch</h4>
-          <p className="text-sm text-muted">Create a custom project template</p>
-        </div>
-      </div>
+            {/* Select Button */}
+            <Button
+              onClick={() => onSelect(template.id)}
+              className="w-full group-hover:bg-accent group-hover:text-bg transition-colors"
+            >
+              Use This Template
+            </Button>
+          </CardContent>
+        </Card>
+      ))}
     </div>
   );
 }
